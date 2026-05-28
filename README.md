@@ -1,5 +1,33 @@
 # 🐎 競馬演出スコアラー
 
+## 🎯 このプロジェクトについて
+
+このアプリは、**React + Django + SQLite** のフルスタック構成を学習するために作成したポートフォリオです。
+
+| 目的           | 内容                                            |
+| -------------- | ----------------------------------------------- |
+| フロントエンド | React / Vite / Tailwind CSS によるSPA構成の理解 |
+| バックエンド   | Django による REST API 設計・実装の理解         |
+| DB             | SQLite / Django ORM によるデータ永続化の理解    |
+| 連携           | フロントエンドとバックエンドの API 通信の理解   |
+
+今後は本プロジェクトで得た知識を活かし、**CSV を使った業務の日次・月次処理ツール**や**集計レポートの自動化**など、実務で活用できるアプリケーション開発に発展させていく予定です。
+
+---
+
+## 🌐 デプロイ先
+
+| 役割           | サービス | URL                                        |
+| -------------- | -------- | ------------------------------------------ |
+| フロントエンド | Vercel   | https://react-scoring-frontend.vercel.app  |
+| バックエンド   | Render   | https://react-scoring-backend.onrender.com |
+
+> Renderの無料プランはスリープがあるため、初回アクセス時に1〜2分かかる場合があります。
+
+---
+
+## 📋 機能概要
+
 Excel 解答ファイルをアップロードするだけで自動採点する Web アプリです。
 採点結果をランク・正答率・動画演出で表示し、履歴管理・CSV エクスポートにも対応しています。
 
@@ -16,13 +44,24 @@ Excel 解答ファイルをアップロードするだけで自動採点する W
 | DB               | SQLite3                            |
 | Excel 処理       | pandas 3 / openpyxl 3              |
 | 静的ファイル配信 | WhiteNoise 6                       |
+| フロントデプロイ | Vercel                             |
+| バックデプロイ   | Render                             |
 
 ---
 
-## 📁 プロジェクト構成
+## 📁 リポジトリ構成
+
+フロントエンドとバックエンドはリポジトリを分けて管理しています。
+
+| リポジトリ     | URL                                                         |
+| -------------- | ----------------------------------------------------------- |
+| フロントエンド | https://github.com/norihikoota77-lab/React-scoring-frontend |
+| バックエンド   | https://github.com/norihikoota77-lab/React-scoring-backend  |
+
+### バックエンド構成
 
 ```
-portfolio_kweb/
+React-scoring-backend/
 ├── manage.py
 ├── requirements.txt
 ├── db.sqlite3
@@ -37,18 +76,23 @@ portfolio_kweb/
 │   ├── admin.py
 │   └── static/
 │       └── videos/         # 演出動画（excellent / good / try_again）
-├── frontend/               # React アプリ
-│   ├── src/
-│   │   ├── App.jsx
-│   │   └── components/
-│   ├── package.json
-│   └── vite.config.js
-└── static/                 # collectstatic 出力先
+└── staticfiles/            # collectstatic 出力先
+```
+
+### フロントエンド構成
+
+```
+React-scoring-frontend/
+├── src/
+│   ├── App.jsx
+│   └── components/
+├── package.json
+└── vite.config.js
 ```
 
 ---
 
-## ⚙️ 環境構築
+## ⚙️ ローカル環境構築
 
 ### 必要環境
 
@@ -80,8 +124,6 @@ python manage.py runserver
 ### フロントエンド
 
 ```bash
-cd frontend
-
 # パッケージインストール
 npm install
 
@@ -115,7 +157,7 @@ npm run dev
 
 ### 採点手順
 
-1. ブラウザで `http://localhost:5173` を開く
+1. ブラウザで `https://react-scoring-frontend.vercel.app` を開く
 2. **正解マスタ**（`answer_key.xlsx`）をアップロード
 3. **ユーザー解答**（`sample.xlsx`）をアップロード
 4. **採点ボタン**を押す
@@ -165,3 +207,12 @@ npm run dev
 | A      | 70% 以上 |
 | B      | 50% 以上 |
 | C      | 50% 未満 |
+
+---
+
+## 🗺️ 今後の開発予定
+
+- [ ] Web入力による自己採点機能（Excel廃止）
+- [ ] CSV日次・月次処理ツールの追加
+- [ ] 集計レポートの自動生成
+- [ ] ユーザー認証・権限管理
