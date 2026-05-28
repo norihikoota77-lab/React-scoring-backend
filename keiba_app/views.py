@@ -465,3 +465,175 @@ def export_history_csv(request):
         ])
 
     return response
+
+# ================================================
+#  Web採点 API
+# ================================================
+
+from .models import Exam, Question
+
+
+@csrf_exempt
+def exam_list_api(request):
+    """試験一覧を返す"""
+
+    if request.method != "GET":
+        return JsonResponse({"error": "GET only"}, status=400)
+
+    exams = Exam.objects.all().order_by("title")
+
+    data = [
+        {
+            "id": exam.id,
+            "title": exam.title,
+            "choice_type": exam.choice_type,
+            "question_count": exam.questions.count(),
+        }
+        for exam in exams
+    ]
+
+    return JsonResponse(data, safe=False)
+
+
+@csrf_exempt
+def exam_questions_api(request, exam_id):
+    """指定試験の問題一覧を返す"""
+
+    if request.method != "GET":
+        return JsonResponse({"error": "GET only"}, status=400)
+
+    try:
+        exam = Exam.objects.get(id=exam_id)
+    except Exam.DoesNotExist:
+        return JsonResponse({"error": "試験が見つかりません"}, status=404)
+
+    questions = exam.questions.all()
+
+    data = {
+        "exam_id": exam.id,
+        "exam_title": exam.title,
+        "choice_type": exam.choice_type,
+        "questions": [
+            {
+                "number": q.number,
+                "text": q.text,
+            }
+            for q in questions
+        ],
+    }
+
+    return JsonResponse(data)
+
+
+@csrf_exempt
+def exam_submit_api(request, exam_id):
+    """解答を受け取って採点し結果を返す"""
+
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=400)
+
+    try:
+        exam = Exam.objects.get(id=exam_id)
+    except Exam.DoesNotExist:
+        return JsonResponse({"error": "試験が見つかりません"}, status=404)
+
+    try:
+        import json
+        body = json.loads(request.body)
+        user_name = body.get("user_name", "名無し")
+        answers = body.get("answers", {})
+        # answers = {"1": "3", "2": "A", ...} 問題番号: 解答
+
+        questions = exam.questions.all()
+
+        rows_data = []
+        score = 0
+        valid_count = 0
+
+        for q in questions:
+            user_ans = str(answers.get(str(q.number), "")).strip().upper()
+            correct_ans = str(q.correct_answer).strip().upper()
+
+            is_correct = user_ans == correct_ans
+            valid_count += 1
+
+            if is_correct:
+                score += 1
+
+            rows_data.append([
+                q.number,
+                user_ans if user_ans else "未記入",
+                correct_ans,
+                "⭕" if is_correct else "✖",
+            ])
+
+        percentage = (score / valid_count * 100) if valid_count > 0 else 0.0
+
+        # ランク判定
+        if percentage == 100:
+            rank = "S"
+        elif percentage >= 70:
+            rank = "A"
+        elif percentage >= 50:
+            rank = "B"
+        else:
+            rank = "C"
+
+        RESULT_MESSAGES = {
+            "S": "🌟🏆 [G1制覇] 伝説の三冠馬級！",
+            "A": "🥈 [重賞入着] 素晴らしい末脚です",
+            "B": "🐎 [入賞] 掲示板に載りました",
+            "C": "🏃 [未勝利] ゲート練習からやり直し",
+        }
+
+        msg = RESULT_MESSAGES[rank]
+
+        # 動画選択
+        if percentage >= 80:
+            folder_name = "excellent"
+        elif percentage >= 50:
+            folder_name = "good"
+        else:
+            folder_name = "try_again"
+
+        static_videos_dir = os.path.join(
+            str(settings.BASE_DIR),
+            "keiba_app",
+            "static",
+            "videos"
+        )
+
+        folder_path = os.path.join(static_videos_dir, folder_name)
+        video_file = f"videos/{folder_name}/default.mp4"
+
+        if os.path.exists(folder_path):
+            mp4_files = [f for f in os.listdir(folder_path) if f.lower().endswith(".mp4")]
+            if mp4_files:
+                video_file = f"videos/{folder_name}/{random.choice(mp4_files)}"
+
+        # 履歴保存
+        ScoreHistory.objects.create(
+            score=score,
+            valid_count=valid_count,
+            percentage=percentage,
+            rank=rank,
+            message=msg,
+            rows_data=rows_data,
+            user_name=user_name,
+            exam_title=exam.title,
+        )
+
+        return JsonResponse({
+            "score": score,
+            "valid_count": valid_count,
+            "percentage": percentage,
+            "rank": rank,
+            "msg": msg,
+            "rows_data": rows_data,
+            "video_file": video_file,
+            "user_name": user_name,
+            "exam_title": exam.title,
+        })
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

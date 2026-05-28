@@ -19,7 +19,7 @@ export default function App() {
 
   const fetchHistories = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/history/");
+      const response = await fetch("https://react-scoring-backend.onrender.com/api/history/");
       const data = await response.json();
       setHistories(data);
     } catch (error) {
@@ -33,7 +33,7 @@ export default function App() {
 
   const deleteHistory = async (id) => {
     try {
-      await fetch(`http://127.0.0.1:8000/api/history/delete/${id}/`, {
+      await fetch(`https://react-scoring-backend.onrender.com/api/history/delete/${id}/`, {
         method: "DELETE",
       });
       fetchHistories();
@@ -55,7 +55,7 @@ export default function App() {
 
     try {
       setLoading(true);
-      const response = await fetch("http://127.0.0.1:8000/api/score/", {
+      const response = await fetch("https://react-scoring-backend.onrender.com/api/score/", {
         method: "POST",
         body: formData,
       });
@@ -149,7 +149,7 @@ export default function App() {
                   className="w-full rounded-3xl shadow-2xl border border-white/20"
                 >
                   <source
-                    src={`http://127.0.0.1:8000/static/${result.video_file}`}
+                    src={`https://react-scoring-backend.onrender.com/static/${result.video_file}`}
                     type="video/mp4"
                   />
                 </video>
@@ -216,7 +216,7 @@ export default function App() {
           <h2 className="text-3xl font-bold mb-6 mt-4">採点履歴</h2>
 
           <a
-            href="http://127.0.0.1:8000/api/history/export/"
+            href="https://react-scoring-backend.onrender.com/api/history/export/"
             target="_blank"
             rel="noreferrer"
             className="inline-block mb-6 bg-green-500 hover:bg-green-600 px-5 py-3 rounded-2xl font-bold transition"
