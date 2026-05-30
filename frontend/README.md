@@ -1,16 +1,66 @@
-# React + Vite
+# 🐎 競馬演出スコアラー - フロントエンド
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 🎯 概要
 
-Currently, two official plugins are available:
+React で構築した競馬演出スコアラーのフロントエンドです。
+Excel 解答ファイルをアップロードするだけで自動採点し、結果をランク・動画演出・グラフで表示します。
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+バックエンドリポジトリ：https://github.com/norihikoota77-lab/React-scoring-backend
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🌐 デプロイ先
 
-## Expanding the ESLint configuration
+| サービス | URL                                       |
+| -------- | ----------------------------------------- |
+| Vercel   | https://react-scoring-frontend.vercel.app |
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## 🖥️ 技術スタック
+
+| 技術              | 用途              |
+| ----------------- | ----------------- |
+| React 19 / Vite 8 | SPAフレームワーク |
+| Tailwind CSS 4    | スタイリング      |
+| Framer Motion 12  | アニメーション    |
+| Recharts 3        | 正答率推移グラフ  |
+
+---
+
+## ⚙️ ローカル環境構築
+
+### 必要環境
+
+- Node.js v24.15.0
+- npm 11.12.1
+
+### 起動手順
+
+```bash
+# パッケージインストール
+npm install
+
+# 開発サーバー起動
+npm run dev
+```
+
+ブラウザで `http://localhost:5173` を開く。
+
+> ローカルで動かす場合はバックエンドも起動してください。  
+> バックエンドの起動方法はバックエンドリポジトリの README を参照してください。
+
+---
+
+## 📦 ビルド
+
+```bash
+npm run build
+```
+
+---
+
+## 🗺️ 今後の開発予定
+
+- [ ] Web入力による自己採点機能（Excel廃止）
+- [ ] ユーザー認証・権限管理

@@ -1,30 +1,32 @@
 import { motion } from "framer-motion";
 
 const HalfTable = ({ rows }) => (
-  <div>
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr 2fr 1fr", backgroundColor: "rgba(0,0,0,0.3)", padding: "6px 12px" }}>
-      <span style={{ fontSize: "12px", color: "#94a3b8" }}>問題</span>
-      <span style={{ fontSize: "12px", color: "#94a3b8" }}>解答</span>
-      <span style={{ fontSize: "12px", color: "#94a3b8" }}>正解</span>
-      <span style={{ fontSize: "12px", color: "#94a3b8", textAlign: "center" }}>判定</span>
+  <div style={{ width: "100%" }}>
+    <div style={{ display: "grid", gridTemplateColumns: "25% 25% 25% 25%", backgroundColor: "rgba(0,0,0,0.3)", padding: "6px 12px" }}>
+      <span style={{ fontSize: "12px", color: "#94a3b8", textAlign: "center",minWidth: 0, overflow: "hidden" }}>問題</span>
+      <span style={{ fontSize: "12px", color: "#94a3b8", textAlign: "center",minWidth: 0, overflow: "hidden" }}>解答</span>
+      <span style={{ fontSize: "12px", color: "#94a3b8", textAlign: "center",minWidth: 0, overflow: "hidden" }}>正解</span>
+      <span style={{ fontSize: "12px", color: "#94a3b8", textAlign: "center", minWidth: 0, overflow: "hidden" }}>判定</span>
     </div>
     {rows.map((row, index) => {
       const isCorrect = row[3] === "\u2b55";
       return (
-        <div key={index} style={{ display: "grid", gridTemplateColumns: "1fr 2fr 2fr 1fr", padding: "6px 12px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
-          <span style={{ color: "#94a3b8", fontWeight: "bold" }}>{row[0]}</span>
-          <span style={{ color: "white" }}>{row[1]}</span>
-          <span style={{ color: "white" }}>{row[2]}</span>
-          <span style={{ textAlign: "center", fontWeight: "bold", color: isCorrect ? "#4ade80" : "#f87171" }}>{row[3]}</span>
+        <div key={index} style={{ display: "grid", gridTemplateColumns: "25% 25% 25% 25%", padding: "6px 12px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+          <span style={{ textAlign: "center", color: "#94a3b8", fontWeight: "bold", minWidth: 0, overflow: "hidden" }}>{row[0]}</span>
+          <span style={{ textAlign: "center", color: "white", minWidth: 0, overflow: "hidden" }}>{row[1]}</span>
+          <span style={{ textAlign: "center", color: "white", minWidth: 0, overflow: "hidden" }}>{row[2]}</span>
+          <span style={{ textAlign: "center", fontWeight: "bold", minWidth: 0, overflow: "hidden", color: isCorrect ? "#4ade80" : "#f87171" }}>{row[3]}</span>
         </div>
       );
     })}
   </div>
 );
 
+
 export default function ResultTable({ rowsData }) {
-  const firstHalf = rowsData.slice(0, 20);
-  const secondHalf = rowsData.slice(20);
+  const mid = Math.ceil(rowsData.length / 2);
+  const firstHalf = rowsData.slice(0, mid);
+  const secondHalf = rowsData.slice(mid);
 
   return (
     <motion.div

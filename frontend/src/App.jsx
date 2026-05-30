@@ -104,6 +104,16 @@ export default function App() {
       <Header />
 
       <main className="max-w-6xl mx-auto px-4 py-10">
+
+      {/* ヒーロー画像 */}
+        <div className="mb-8 rounded-3xl overflow-hidden shadow-2xl">
+          <img
+            src="/src/assets/hero_top.png"
+            alt="競馬演出スコアラー"
+            className="w-full object-cover h-64 md:h-80"
+          />
+        </div>
+
         <UploadCard
           correctFile={correctFile}
           userFile={userFile}

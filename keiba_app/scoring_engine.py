@@ -67,11 +67,11 @@ class ScoringEngine:
             )
 
             exam_name = str(
-                df.iloc[12, 0]
+                df.iloc[12, 1]
             ).strip()
 
             user_name = str(
-                df.iloc[13, 0]
+                df.iloc[13, 1]
             ).strip()
 
             return exam_name, user_name
@@ -301,15 +301,18 @@ class ScoringEngine:
 
     # ── Excel レポート出力 ─────────────────────
 
+  
     def export_excel(self, output_file: str) -> None:
 
+        mid = len(self.rows_data) // 2
+
         left_df = pd.DataFrame(
-            self.rows_data[:20],
+            self.rows_data[:mid],
             columns=["問題", "解答", "正解", "判定"]
         )
 
         right_df = pd.DataFrame(
-            self.rows_data[20:40],
+            self.rows_data[mid:],
             columns=["問題", "解答", "正解", "判定"]
         )
 
