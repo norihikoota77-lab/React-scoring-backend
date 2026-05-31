@@ -7,6 +7,8 @@ export default function UploadCard({
   setUserFile,
   handleSubmit,
   loading,
+  passScore,      // ★追加
+  setPassScore,   // ★追加
 }) {
 
 const correctInputRef = useRef(null);
@@ -153,6 +155,20 @@ const userInputRef = useRef(null);
 
         </div>
 
+      </div>
+
+      {/* 合格ライン設定 */}
+      <div className="mt-6 flex items-center gap-4">
+        <label className="text-white font-bold">合格ライン</label>
+        <input
+          type="number"
+          min="0"
+          max="100"
+          value={passScore}
+          onChange={(e) => setPassScore(Number(e.target.value))}
+          className="bg-slate-800 border border-white/20 px-4 py-2 rounded-xl text-white w-24 text-center"
+        />
+        <span className="text-white">%</span>
       </div>
 
       <button

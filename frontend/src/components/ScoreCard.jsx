@@ -4,6 +4,7 @@ export default function ScoreCard({
   title,
   value,
   color = "text-white",
+  size = "text-6xl",  // ★追加
 }) {
 
   return (
@@ -47,14 +48,9 @@ export default function ScoreCard({
 
       </p>
 
-      <p
-        className={`
-          text-6xl
-          font-extrabold
-          ${color}
-        `}
-      >
 
+
+      <p className={`${size} font-extrabold ${color}`}>
         {value}
 
       </p>
