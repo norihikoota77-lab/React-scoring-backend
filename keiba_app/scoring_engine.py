@@ -74,10 +74,12 @@ class ScoringEngine:
                 df.iloc[13, 1]
             ).strip()
 
+           
+
             return exam_name, user_name
 
         except Exception as e:
-
+           
             raise RuntimeError(
                 f"試験情報取得エラー: {e}"
             ) from e
@@ -97,6 +99,7 @@ class ScoringEngine:
         user_exam, user_name = self.get_exam_info(
             user_file
         )
+
 
         if correct_exam != user_exam:
 

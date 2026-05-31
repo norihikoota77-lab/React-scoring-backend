@@ -6,6 +6,8 @@ import ResultTable from "./components/ResultTable";
 import ScoreCard from "./components/ScoreCard";
 import ResultMessage from "./components/ResultMessage";
 import HistoryChart from "./components/HistoryChart";
+import heroImage from "./assets/hero_top.png";
+
 
 export default function App() {
   const [correctFile, setCorrectFile] = useState(null);
@@ -105,10 +107,10 @@ export default function App() {
 
       <main className="max-w-6xl mx-auto px-4 py-10">
 
-      {/* ヒーロー画像 */}
+        {/* ヒーロー画像 ← returnの中に移動 */}
         <div className="mb-8 rounded-3xl overflow-hidden shadow-2xl">
           <img
-            src="/src/assets/hero_top.png"
+            src={heroImage}
             alt="競馬演出スコアラー"
             className="w-full object-cover h-64 md:h-80"
           />

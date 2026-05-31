@@ -273,10 +273,18 @@ def score_api(request):
         except:
             pass
 
-        engine.grade(
-            c_temp.name,
-            u_temp.name
-        )
+    
+        try:
+            engine.grade(
+                c_temp.name,
+                u_temp.name
+            )
+        except ValueError as e:
+            # 試験名不一致の場合はここで返す
+            return JsonResponse(
+                {"error": str(e)},
+                status=400
+            )
 
         msg, color = engine.get_result_message()
 
