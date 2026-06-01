@@ -68,11 +68,11 @@ class ScoringEngine:
 
             exam_name = str(
                 df.iloc[12, 1]
-            ).strip()
+            ).strip() if len(df) > 12 else ""
 
             user_name = str(
                 df.iloc[13, 1]
-            ).strip()
+            ).strip() if len(df) > 13 else ""
 
            
 
@@ -100,7 +100,6 @@ class ScoringEngine:
             user_file
         )
 
-
         if correct_exam != user_exam:
 
             raise ValueError(
@@ -112,16 +111,9 @@ class ScoringEngine:
         return user_exam, user_name
 
     # ── Excel 読み込み ─────────────────────────
-
     @staticmethod
     def load_answers(file_path: str) -> dict:
-        """
-        Excel ファイルを読み込んで
-        {問番号: 答え文字列} の辞書を返す。
-        """
-
         try:
-
             df = pd.read_excel(
                 file_path,
                 header=None
@@ -129,44 +121,36 @@ class ScoringEngine:
 
             data_map: dict = {}
 
-            col_pairs = [
-                (0, 1),
-                (2, 3),
-                (4, 5),
-                (6, 7)
-            ]
-
-            # 1行目が数値でなければ
-            # ヘッダー行とみなしてスキップ
-
+            # 1行目が数値でなければヘッダー行とみなしてスキップ
             start_row = (
                 1
                 if not str(df.iloc[0, 0]).isdigit()
                 else 0
             )
 
+            # 列数から列ペアを動的に生成
+            # (0,1), (2,3), (4,5)... と2列ずつペアにする
+            total_cols = df.shape[1]
+            col_pairs = [
+                (i, i + 1)
+                for i in range(0, total_cols - 1, 2)
+            ]
+
+            # 行数から各ペアの行数を動的に取得
+            total_rows = df.shape[0] - start_row
+
             for col_num_idx, col_ans_idx in col_pairs:
 
-                for row_idx in range(10):
+                for row_idx in range(total_rows):
 
                     try:
-
-                        target_row = (
-                            start_row + row_idx
-                        )
+                        target_row = start_row + row_idx
 
                         if target_row >= len(df):
                             continue
 
-                        q_val = df.iloc[
-                            target_row,
-                            col_num_idx
-                        ]
-
-                        ans_val = df.iloc[
-                            target_row,
-                            col_ans_idx
-                        ]
+                        q_val = df.iloc[target_row, col_num_idx]
+                        ans_val = df.iloc[target_row, col_ans_idx]
 
                         if pd.notna(q_val):
 
@@ -189,6 +173,9 @@ class ScoringEngine:
                         continue
 
             return data_map
+
+
+    
 
         except Exception as e:
 

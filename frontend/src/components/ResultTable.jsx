@@ -3,9 +3,9 @@ import { motion } from "framer-motion";
 const HalfTable = ({ rows }) => (
   <div style={{ width: "100%" }}>
     <div style={{ display: "grid", gridTemplateColumns: "25% 25% 25% 25%", backgroundColor: "rgba(0,0,0,0.3)", padding: "6px 12px" }}>
-      <span style={{ fontSize: "12px", color: "#94a3b8", textAlign: "center",minWidth: 0, overflow: "hidden" }}>問題</span>
-      <span style={{ fontSize: "12px", color: "#94a3b8", textAlign: "center",minWidth: 0, overflow: "hidden" }}>解答</span>
-      <span style={{ fontSize: "12px", color: "#94a3b8", textAlign: "center",minWidth: 0, overflow: "hidden" }}>正解</span>
+      <span style={{ fontSize: "12px", color: "#94a3b8", textAlign: "center", minWidth: 0, overflow: "hidden" }}>問題</span>
+      <span style={{ fontSize: "12px", color: "#94a3b8", textAlign: "center", minWidth: 0, overflow: "hidden" }}>解答</span>
+      <span style={{ fontSize: "12px", color: "#94a3b8", textAlign: "center", minWidth: 0, overflow: "hidden" }}>正解</span>
       <span style={{ fontSize: "12px", color: "#94a3b8", textAlign: "center", minWidth: 0, overflow: "hidden" }}>判定</span>
     </div>
     {rows.map((row, index) => {
@@ -13,7 +13,7 @@ const HalfTable = ({ rows }) => (
       return (
         <div key={index} style={{ display: "grid", gridTemplateColumns: "25% 25% 25% 25%", padding: "6px 12px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
           <span style={{ textAlign: "center", color: "#94a3b8", fontWeight: "bold", minWidth: 0, overflow: "hidden" }}>{row[0]}</span>
-          <span style={{ textAlign: "center", color: "white", minWidth: 0, overflow: "hidden" }}>{row[1]}</span>
+          <span style={{ textAlign: "center", color: "#fdf0bd", minWidth: 0, overflow: "hidden" }}>{row[1]}</span>
           <span style={{ textAlign: "center", color: "white", minWidth: 0, overflow: "hidden" }}>{row[2]}</span>
           <span style={{ textAlign: "center", fontWeight: "bold", minWidth: 0, overflow: "hidden", color: isCorrect ? "#4ade80" : "#f87171" }}>{row[3]}</span>
         </div>

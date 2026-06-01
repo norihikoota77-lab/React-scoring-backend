@@ -137,7 +137,10 @@ export default function App() {
                 <p className="text-slate-300 text-lg">{result.exam_title}</p>
               </div>
               <div className="grid md:grid-cols-3 gap-6 mb-8">
-                <ScoreCard title="スコア" value={result.score} />
+                <ScoreCard 
+                  title="スコア" value={result.score}
+                  sub={`/ ${result.valid_count}`}  
+                />
                 <ScoreCard
                   title="正答率"
                   value={`${Number(result.percentage).toFixed(1)}%`}
@@ -147,7 +150,7 @@ export default function App() {
                   title="判定"
                   value={Number(result.percentage) >= passScore ? "✅ 合格" : "❌ 不合格"}
                   color={Number(result.percentage) >= passScore ? "text-green-400" : "text-red-400"}
-                  size="text-5xl"  // ★追加
+                  size="text-4xl"  // ★追加
                 />
               </div>
               <ResultMessage rank={result.rank} message={result.msg} />
