@@ -47,6 +47,8 @@ urlpatterns = [
     ),
     # ★ReactのSPAを返す（末尾に配置）
     path("", TemplateView.as_view(template_name="index.html")),
+
+    path("api/score/web/", views.score_web_api, name="score_web_api"),
 ]
 
 

@@ -645,3 +645,144 @@ def exam_submit_api(request, exam_id):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+    
+
+# ================================================
+#  Web解答採点 API
+# ================================================
+
+@csrf_exempt
+def score_web_api(request):
+    """Web解答データと正解マスタExcelを受け取って採点する"""
+
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=400)
+
+    try:
+        correct_file = request.FILES["correct_file"]
+        user_name = request.POST.get("user_name", "名無し")
+        exam_title = request.POST.get("exam_title", "試験")
+        answers_json = request.POST.get("answers", "{}")
+        question_count = int(request.POST.get("question_count", 40))
+
+        import json
+        answers = json.loads(answers_json)
+        # answers = {"1": "3", "2": "A", ...}
+
+        # 正解マスタを一時ファイルに保存
+        c_temp = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
+        for chunk in correct_file.chunks():
+            c_temp.write(chunk)
+        c_temp.close()
+
+        # 試験名チェック（正解マスタのB13と入力された試験名を比較）
+        try:
+            wb_c = openpyxl.load_workbook(c_temp.name, data_only=True)
+            ws_c = wb_c.active
+            if ws_c["B13"].value:
+                correct_exam_title = str(ws_c["B13"].value).strip()
+                if correct_exam_title != exam_title.strip():
+                    return JsonResponse(
+                        {
+                            "error": f"試験名が一致しません\n正解マスタ: {correct_exam_title}\n入力値: {exam_title}"
+                        },
+                        status=400,
+                    )
+        except Exception:
+            pass
+
+        # 正解マスタを読み込む
+        engine = ScoringEngine()
+        correct_map = engine.load_answers(c_temp.name)
+
+        # 採点
+        rows_data = []
+        score = 0
+        valid_count = 0
+
+        for q_num in range(1, question_count + 1):
+            correct_ans = correct_map.get(q_num)
+            user_ans = str(answers.get(str(q_num), "")).strip().upper()
+
+            is_valid = correct_ans is not None
+            is_correct = user_ans == str(correct_ans).strip().upper() if is_valid else False
+
+            if is_valid:
+                valid_count += 1
+                if is_correct:
+                    score += 1
+
+            rows_data.append([
+                q_num,
+                user_ans if user_ans else "未記入",
+                correct_ans if is_valid else "-",
+                "⭕" if (is_valid and is_correct) else ("✖" if is_valid else "-"),
+            ])
+
+        percentage = (score / valid_count * 100) if valid_count > 0 else 0.0
+
+        # ランク判定
+        if percentage == 100:
+            rank = "S"
+        elif percentage >= 70:
+            rank = "A"
+        elif percentage >= 50:
+            rank = "B"
+        else:
+            rank = "C"
+
+        RESULT_MESSAGES = {
+            "S": "🌟🏆 [G1制覇] 伝説の三冠馬級！",
+            "A": "🥈 [重賞入着] 素晴らしい末脚です",
+            "B": "🐎 [入賞] 掲示板に載りました",
+            "C": "🏃 [未勝利] ゲート練習からやり直し",
+        }
+        msg = RESULT_MESSAGES[rank]
+
+        # 動画選択
+        if percentage >= 80:
+            folder_name = "excellent"
+        elif percentage >= 50:
+            folder_name = "good"
+        else:
+            folder_name = "try_again"
+
+        static_videos_dir = os.path.join(str(settings.BASE_DIR), "keiba_app", "static", "videos")
+        folder_path = os.path.join(static_videos_dir, folder_name)
+        video_file = f"videos/{folder_name}/default.mp4"
+
+        if os.path.exists(folder_path):
+            mp4_files = [f for f in os.listdir(folder_path) if f.lower().endswith(".mp4")]
+            if mp4_files:
+                video_file = f"videos/{folder_name}/{random.choice(mp4_files)}"
+
+        # 履歴保存
+        ScoreHistory.objects.create(
+            score=score,
+            valid_count=valid_count,
+            percentage=percentage,
+            rank=rank,
+            message=msg,
+            rows_data=rows_data,
+            user_name=user_name,
+            exam_title=exam_title,
+        )
+
+        return JsonResponse({
+            "score": score,
+            "valid_count": valid_count,
+            "percentage": percentage,
+            "rank": rank,
+            "msg": msg,
+            "rows_data": rows_data,
+            "video_file": video_file,
+            "user_name": user_name,
+            "exam_title": exam_title,
+        })
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+    finally:
+        if os.path.exists(c_temp.name):
+            os.remove(c_temp.name)

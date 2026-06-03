@@ -7,9 +7,10 @@ import ScoreCard from "./components/ScoreCard";
 import ResultMessage from "./components/ResultMessage";
 import HistoryChart from "./components/HistoryChart";
 import heroImage from "./assets/hero_top.png";
-
+import AnswerSheet from "./components/AnswerSheet";
 
 export default function App() {
+  const [mode, setMode] = useState("excel"); // "excel" or "web"
   const [correctFile, setCorrectFile] = useState(null);
   const [userFile, setUserFile] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -18,10 +19,12 @@ export default function App() {
   const [selectedUser, setSelectedUser] = useState("ALL");
   const [selectedExam, setSelectedExam] = useState("ALL"); // ★追加
   const [selectedHistory, setSelectedHistory] = useState(null);
-  const [passScore, setPassScore] = useState(70); // ★合格点の状態を追加   
+  const [passScore, setPassScore] = useState(70); // ★合格点の状態を追加
   const fetchHistories = async () => {
     try {
-      const response = await fetch("https://react-scoring-backend.onrender.com/api/history/");
+      const response = await fetch(
+        "https://react-scoring-backend.onrender.com/api/history/",
+      );
       const data = await response.json();
       setHistories(data);
     } catch (error) {
@@ -35,9 +38,12 @@ export default function App() {
 
   const deleteHistory = async (id) => {
     try {
-      await fetch(`https://react-scoring-backend.onrender.com/api/history/delete/${id}/`, {
-        method: "DELETE",
-      });
+      await fetch(
+        `https://react-scoring-backend.onrender.com/api/history/delete/${id}/`,
+        {
+          method: "DELETE",
+        },
+      );
       fetchHistories();
     } catch (error) {
       console.error(error);
@@ -57,10 +63,13 @@ export default function App() {
 
     try {
       setLoading(true);
-      const response = await fetch("https://react-scoring-backend.onrender.com/api/score/", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(
+        "https://react-scoring-backend.onrender.com/api/score/",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
       const text = await response.text();
       console.log(text);
       const data = JSON.parse(text);
@@ -83,16 +92,10 @@ export default function App() {
     }
   };
 
-  const users = [
-    "ALL",
-    ...new Set(histories.map((h) => h.user_name)),
-  ];
+  const users = ["ALL", ...new Set(histories.map((h) => h.user_name))];
 
   // ★ 試験名リスト
-  const exams = [
-    "ALL",
-    ...new Set(histories.map((h) => h.exam_title)),
-  ];
+  const exams = ["ALL", ...new Set(histories.map((h) => h.exam_title))];
 
   // ★ ユーザー＋試験名で絞り込み
   const filteredHistories = histories
@@ -106,7 +109,6 @@ export default function App() {
       <Header />
 
       <main className="max-w-6xl mx-auto px-4 py-10">
-
         {/* ヒーロー画像 ← returnの中に移動 */}
         <div className="mb-8 rounded-3xl overflow-hidden shadow-2xl">
           <img
@@ -115,6 +117,43 @@ export default function App() {
             className="w-full object-cover h-64 md:h-80"
           />
         </div>
+
+        {/* タブ切り替え */}
+        <div className="flex gap-4 mb-6">
+          <button
+            onClick={() => setMode("excel")}
+            className={`px-6 py-3 rounded-2xl font-bold transition ${
+              mode === "excel"
+                ? "bg-red-500 text-white"
+                : "bg-white/10 text-slate-300 hover:bg-white/20"
+            }`}
+          >
+            📁 Excel採点
+          </button>
+          <button
+            onClick={() => setMode("web")}
+            className={`px-6 py-3 rounded-2xl font-bold transition ${
+              mode === "web"
+                ? "bg-red-500 text-white"
+                : "bg-white/10 text-slate-300 hover:bg-white/20"
+            }`}
+          >
+            🌐 Web解答
+          </button>
+        </div>
+
+        {/* Excel採点モード */}
+        {mode === "excel" && (
+          <UploadCard ... />
+        )}
+
+        {/* Web解答モード */}
+        {mode === "web" && (
+          <WebExamCard
+            setResult={setResult}
+            fetchHistories={fetchHistories}
+          />
+        )}
 
         <UploadCard
           correctFile={correctFile}
@@ -125,7 +164,7 @@ export default function App() {
           loading={loading}
           passScore={passScore}
           setPassScore={setPassScore}
- />
+        />
 
         {result && (
           <>
@@ -133,13 +172,16 @@ export default function App() {
             <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl p-8 mt-8 text-white">
               <h2 className="text-3xl font-extrabold mb-6">採点結果</h2>
               <div className="mb-6">
-                <p className="text-2xl font-bold text-red-300">{result.user_name}</p>
+                <p className="text-2xl font-bold text-red-300">
+                  {result.user_name}
+                </p>
                 <p className="text-slate-300 text-lg">{result.exam_title}</p>
               </div>
               <div className="grid md:grid-cols-3 gap-6 mb-8">
-                <ScoreCard 
-                  title="スコア" value={result.score}
-                  sub={`/ ${result.valid_count}`}  
+                <ScoreCard
+                  title="スコア"
+                  value={result.score}
+                  sub={`/ ${result.valid_count}`}
                 />
                 <ScoreCard
                   title="正答率"
@@ -148,9 +190,17 @@ export default function App() {
                 />
                 <ScoreCard
                   title="判定"
-                  value={Number(result.percentage) >= passScore ? "✅ 合格" : "❌ 不合格"}
-                  color={Number(result.percentage) >= passScore ? "text-green-400" : "text-red-400"}
-                  size="text-4xl"  // ★追加
+                  value={
+                    Number(result.percentage) >= passScore
+                      ? "✅ 合格"
+                      : "❌ 不合格"
+                  }
+                  color={
+                    Number(result.percentage) >= passScore
+                      ? "text-green-400"
+                      : "text-red-400"
+                  }
+                  size="text-4xl" // ★追加
                 />
               </div>
               <ResultMessage rank={result.rank} message={result.msg} />
@@ -175,9 +225,7 @@ export default function App() {
             )}
 
             {/* 3. 採点詳細 */}
-            {result.rows_data && (
-              <ResultTable rowsData={result.rows_data} />
-            )}
+            {result.rows_data && <ResultTable rowsData={result.rows_data} />}
 
             {/* 4. 正答率推移 */}
             <div className="mt-8">
@@ -256,7 +304,9 @@ export default function App() {
                 <p className="text-2xl font-extrabold text-red-400 mb-2">
                   {Number(history.percentage).toFixed(1)}%
                 </p>
-                <p className="text-xl font-bold text-red-300">{history.user_name}</p>
+                <p className="text-xl font-bold text-red-300">
+                  {history.user_name}
+                </p>
                 <p className="text-slate-300 mb-2">{history.exam_title}</p>
                 <p className="text-slate-200">{history.message}</p>
                 <button
