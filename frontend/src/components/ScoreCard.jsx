@@ -4,7 +4,8 @@ export default function ScoreCard({
   title,
   value,
   color = "text-white",
-  size = "text-6xl",  // ★追加
+  size = "text-6xl", 
+  sub,
 }) {
 
   return (
@@ -48,11 +49,13 @@ export default function ScoreCard({
 
       </p>
 
-
-
       <p className={`${size} font-extrabold ${color}`}>
         {value}
-
+        {sub && (
+          <span className="text-2xl font-normal text-slate-400 ml-1">
+            {sub}
+          </span>
+        )}
       </p>
 
     </motion.div>

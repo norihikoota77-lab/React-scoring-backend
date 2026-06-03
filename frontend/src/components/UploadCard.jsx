@@ -115,8 +115,6 @@ const userInputRef = useRef(null);
             hover:bg-white/10
           "
  >
-
-
           <p className="font-bold text-lg mb-4 text-white">
             ユーザー解答Excel
           </p>
