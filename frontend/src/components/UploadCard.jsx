@@ -22,8 +22,7 @@ const userInputRef = useRef(null);
       </h2>
 
       <div className="grid md:grid-cols-2 gap-6">
-
-        {/* 正解 */}
+        {/* 正解マスタアップロード */}
         <div
           onClick={() => correctInputRef.current.click()}
           onDragOver={(e) => e.preventDefault()}
@@ -32,62 +31,28 @@ const userInputRef = useRef(null);
             const file = e.dataTransfer.files[0];
             if (file) setCorrectFile(file);
           }}
-          
-          className="
-            border
-            border-white/20
-            rounded-2xl
-            p-6
-            bg-white/5
-            backdrop-blur-lg
-            cursor-pointer
-            transition
-            duration-300
-            hover:scale-105
-            hover:shadow-red-500/40
-            hover:border-red-400
-            hover:bg-white/10
-          "
->
-
-          <p className="font-bold text-lg mb-4 text-white">
-            正解マスタExcel
-          </p>
-
+          className={`border rounded-2xl p-6 cursor-pointer transition mb-6 ${
+            correctFile
+              ? "border-green-400/50 bg-green-500/10"
+              : "border-white/20 bg-white/5 hover:border-red-400"
+          }`}
+        >
           <input
             ref={correctInputRef}
             type="file"
             accept=".xlsx"
-            onChange={(e) =>
-              setCorrectFile(e.target.files[0])
-            }
-
+            onChange={(e) => setCorrectFile(e.target.files[0])}
             className="hidden"
           />
-
-            <p
-              className={`
-                mt-4
-                p-4
-                rounded-xl
-                text-center
-                font-bold
-                transition
-                ${
-                  correctFile
-                    ? "bg-green-500 text-white"
-                    : "bg-slate-700 text-slate-300"
-                }
-              `}
-            >
-
-              {correctFile
-                ? `✔ ${correctFile.name}`
-                : "ファイルを選択してください"}
-
-            </p>
-
+          <p className="font-bold text-white mb-2">正解マスタExcel</p>
+          <p className={`p-3 rounded-xl text-center font-bold ${
+            correctFile ? "bg-green-500 text-white" : "bg-slate-700 text-slate-300"
+          }`}>
+            {correctFile ? `✔ ${correctFile.name}` : "ファイルをドラッグ＆ドロップ または クリックして選択"}
+          </p>
         </div>
+
+        
 
         {/* 解答 */}
         <div
