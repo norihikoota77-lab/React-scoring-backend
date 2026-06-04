@@ -49,6 +49,8 @@ urlpatterns = [
     path("", TemplateView.as_view(template_name="index.html")),
 
     path("api/score/web/", views.score_web_api, name="score_web_api"),
+
+    path("api/create-superuser/", views.create_superuser),
 ]
 
 
