@@ -45,13 +45,18 @@ urlpatterns = [
         views.exam_submit_api,
         name="exam_submit_api"
     ),
-    # ★ReactのSPAを返す（末尾に配置）
-    path("", TemplateView.as_view(template_name="index.html")),
-
+    
     path("api/score/web/", views.score_web_api, name="score_web_api"),
 
     path("api/create-superuser/", views.create_superuser),
+
+    path("api/download/excel/", views.download_excel_api, name="download_excel_api"),
+
+# ★ReactのSPAを返す（必ず末尾に配置）
+    path("", TemplateView.as_view(template_name="index.html")),
+
 ]
+
 
 
 # 開発環境用
