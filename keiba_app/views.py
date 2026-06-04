@@ -797,3 +797,163 @@ def create_superuser(request):
     user.set_password("Admin1234!")
     user.save()
     return JsonResponse({"message": "再作成完了"})
+
+# ================================================
+#  Excel詳細レポートダウンロード API
+# ================================================
+
+@csrf_exempt
+def download_excel_api(request):
+    """採点データを受け取ってExcelレポートを返す"""
+
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=400)
+
+    try:
+        import json
+        from django.http import FileResponse
+        import io
+
+        body = json.loads(request.body)
+        user_name = body.get("user_name", "名無し")
+        exam_title = body.get("exam_title", "試験")
+        score = body.get("score", 0)
+        valid_count = body.get("valid_count", 0)
+        percentage = body.get("percentage", 0)
+        rank = body.get("rank", "C")
+        pass_score = body.get("pass_score", 70)
+        rows_data = body.get("rows_data", [])
+
+        # 合格・不合格判定
+        is_pass = float(percentage) >= float(pass_score)
+        pass_label = "合格" if is_pass else "不合格"
+
+        # pandas でExcel作成
+        mid = len(rows_data) // 2
+        left_rows = rows_data[:mid] if mid > 0 else rows_data
+        right_rows = rows_data[mid:] if mid > 0 else []
+
+        left_df = pd.DataFrame(
+            left_rows,
+            columns=["問題", "解答", "正解", "判定"]
+        )
+        right_df = pd.DataFrame(
+            right_rows,
+            columns=["問題", "解答", "正解", "判定"]
+        )
+
+        output = io.BytesIO()
+
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            left_df.to_excel(
+                writer,
+                sheet_name="採点結果",
+                startrow=7,
+                startcol=0,
+                index=False
+            )
+            if right_rows:
+                right_df.to_excel(
+                    writer,
+                    sheet_name="採点結果",
+                    startrow=7,
+                    startcol=5,
+                    index=False
+                )
+
+            ws = writer.sheets["採点結果"]
+
+            # ヘッダー情報
+            ws["A1"] = "🐎 競馬演出スコアラー"
+            ws["A2"] = f"試験名：{exam_title}"
+            ws["A3"] = f"受験者：{user_name}"
+            ws["A5"] = f"スコア：{score} / {valid_count}"
+            ws["A6"] = f"正答率：{round(float(percentage), 1)}%"
+            ws["D5"] = f"ランク：{rank}"
+            ws["D6"] = f"判定：{pass_label}"
+
+            # スタイル設定
+            from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
+
+            # タイトルスタイル
+            ws["A1"].font = Font(bold=True, size=16)
+
+            # 判定色
+            pass_color = "1B5E20" if is_pass else "B71C1C"
+            ws["D6"].font = Font(bold=True, color=pass_color, size=12)
+
+            # テーブルスタイル
+            header_fill = PatternFill(start_color="DA1F28", end_color="DA1F28", fill_type="solid")
+            ok_fill = PatternFill(start_color="E6FFFA", end_color="E6FFFA", fill_type="solid")
+            ng_fill = PatternFill(start_color="FFEBEE", end_color="FFEBEE", fill_type="solid")
+            thin_border = Border(
+                left=Side(style="thin"),
+                right=Side(style="thin"),
+                top=Side(style="thin"),
+                bottom=Side(style="thin"),
+            )
+
+            START_ROW = 8
+            target_cols_left = [1, 2, 3, 4]
+            target_cols_right = [6, 7, 8, 9]
+
+            total_rows = max(len(left_rows), len(right_rows))
+
+            for r in range(START_ROW, START_ROW + total_rows + 1):
+                for col_group in [target_cols_left, target_cols_right]:
+                    for c in col_group:
+                        cell = ws.cell(row=r, column=c)
+                        cell.border = thin_border
+                        cell.alignment = Alignment(horizontal="center", vertical="center")
+
+                        if r == START_ROW:
+                            cell.fill = header_fill
+                            cell.font = Font(color="FFFFFF", bold=True)
+                        else:
+                            row_idx = r - START_ROW - 1
+                            if col_group == target_cols_left and row_idx < len(left_rows):
+                                judgment = left_rows[row_idx][3]
+                                if c in [2]:
+                                    cell.fill = PatternFill(start_color="FFF8DC", end_color="FFF8DC", fill_type="solid")
+                                elif judgment == "⭕":
+                                    cell.fill = ok_fill
+                                elif judgment == "✖":
+                                    cell.fill = ng_fill
+                                if c == 4:
+                                    cell.font = Font(
+                                        color="0000FF" if judgment == "⭕" else "FF0000",
+                                        bold=True, size=14
+                                    )
+                            elif col_group == target_cols_right and row_idx < len(right_rows):
+                                judgment = right_rows[row_idx][3]
+                                if c in [7]:
+                                    cell.fill = PatternFill(start_color="FFF8DC", end_color="FFF8DC", fill_type="solid")
+                                elif judgment == "⭕":
+                                    cell.fill = ok_fill
+                                elif judgment == "✖":
+                                    cell.fill = ng_fill
+                                if c == 9:
+                                    cell.font = Font(
+                                        color="0000FF" if judgment == "⭕" else "FF0000",
+                                        bold=True, size=14
+                                    )
+
+            # 列幅
+            for col, width in {"A": 8, "B": 10, "C": 10, "D": 8, "F": 8, "G": 10, "H": 10, "I": 8}.items():
+                ws.column_dimensions[col].width = width
+
+        output.seek(0)
+
+        import urllib.parse
+        filename = f"{user_name}_{exam_title}_採点結果.xlsx"
+        encoded_filename = urllib.parse.quote(filename)
+
+        response = HttpResponse(
+            output.read(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response["Content-Disposition"] = f"attachment; filename*=UTF-8''{encoded_filename}"
+        return response
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

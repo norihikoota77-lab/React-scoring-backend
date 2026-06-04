@@ -28,12 +28,24 @@ export default function UploadCard({
             const file = e.dataTransfer.files[0];
             if (file) setCorrectFile(file);
           }}
-          className={`border rounded-2xl p-6 cursor-pointer transition mb-6 ${
-            correctFile
-              ? "border-green-400/50 bg-green-500/10"
-              : "border-white/20 bg-white/5 hover:border-red-400"
-          }`}
+          className="
+            border
+            border-white/20
+            rounded-2xl
+            p-6
+            bg-white/5
+            backdrop-blur-lg
+            cursor-pointer
+            transition
+            duration-300
+            hover:scale-105
+            hover:shadow-red-500/40
+            hover:border-red-400
+            hover:bg-white/10
+          "
         >
+          <p className="font-bold text-white mb-2">正解マスタExcel</p>
+
           <input
             ref={correctInputRef}
             type="file"
@@ -41,7 +53,6 @@ export default function UploadCard({
             onChange={(e) => setCorrectFile(e.target.files[0])}
             className="hidden"
           />
-          <p className="font-bold text-white mb-2">正解マスタExcel</p>
 
           {/* 正解マスタ */}
           <p
@@ -61,7 +72,7 @@ export default function UploadCard({
           </p>
         </div>
 
-        {/* 解答 */}
+        {/* ユーザー解答アップロード */}
         <div
           onClick={() => userInputRef.current.click()}
           onDragOver={(e) => e.preventDefault()}
