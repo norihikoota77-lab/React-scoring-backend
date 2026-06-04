@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 const API_BASE = "https://react-scoring-backend.onrender.com";
 
@@ -14,14 +14,49 @@ export default function WebExamCard({ setResult, fetchHistories }) {
   const [answers, setAnswers] = useState({});
   const [correctFile, setCorrectFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [masterMode, setMasterMode] = useState("upload"); // "upload" or "db"
+  const [exams, setExams] = useState([]);
+  const [selectedExamId, setSelectedExamId] = useState("");
   const correctInputRef = useRef(null);
 
   const choices = choiceType === "numeric" ? NUMERIC_CHOICES : ALPHA_CHOICES;
 
+  // 登録済み試験一覧を取得
+  useEffect(() => {
+    fetch(`${API_BASE}/api/exams/`)
+      .then((res) => res.json())
+      .then((data) => setExams(data))
+      .catch((err) => console.error(err));
+  }, []);
+
+  // 試験選択時に選択肢タイプと試験名を自動設定
+  const handleExamSelect = (examId) => {
+    setSelectedExamId(examId);
+    const exam = exams.find((e) => String(e.id) === String(examId));
+    if (exam) {
+      setExamTitle(exam.title);
+      setChoiceType(exam.choice_type === "alpha" ? "alpha" : "numeric");
+      setQuestionCount(exam.question_count);
+    }
+  };
+
   const handleSetup = () => {
-    if (!userName.trim()) { alert("受験者名を入力してください"); return; }
-    if (!examTitle.trim()) { alert("試験名を入力してください"); return; }
-    if (questionCount < 1 || questionCount > 200) { alert("問題数は1〜200の範囲で入力してください"); return; }
+    if (!userName.trim()) {
+      alert("受験者名を入力してください");
+      return;
+    }
+    if (!examTitle.trim()) {
+      alert("試験名を入力してください");
+      return;
+    }
+    if (masterMode === "db" && !selectedExamId) {
+      alert("試験を選択してください");
+      return;
+    }
+    if (questionCount < 1 || questionCount > 200) {
+      alert("問題数は1〜200の範囲で入力してください");
+      return;
+    }
     setAnswers({});
     setStep("answering");
   };
@@ -34,24 +69,48 @@ export default function WebExamCard({ setResult, fetchHistories }) {
   const allAnswered = answeredCount === questionCount;
 
   const handleSubmit = async () => {
-    if (!correctFile) { alert("正解マスタExcelを選択してください"); return; }
-
-    const formData = new FormData();
-    formData.append("correct_file", correctFile);
-    formData.append("user_name", userName);
-    formData.append("exam_title", examTitle);
-    formData.append("answers", JSON.stringify(answers));
-    formData.append("question_count", questionCount);
+    if (masterMode === "upload" && !correctFile) {
+      alert("正解マスタExcelを選択してください");
+      return;
+    }
 
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE}/api/score/web/`, {
-        method: "POST",
-        body: formData,
-      });
+      let response;
+
+      if (masterMode === "upload") {
+        // Excelアップロードモード
+        const formData = new FormData();
+        formData.append("correct_file", correctFile);
+        formData.append("user_name", userName);
+        formData.append("exam_title", examTitle);
+        formData.append("answers", JSON.stringify(answers));
+        formData.append("question_count", questionCount);
+        response = await fetch(`${API_BASE}/api/score/web/`, {
+          method: "POST",
+          body: formData,
+        });
+      } else {
+        // DB登録済みマスタモード
+        response = await fetch(
+          `${API_BASE}/api/exams/${selectedExamId}/submit/`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              user_name: userName,
+              answers: answers,
+            }),
+          },
+        );
+      }
+
       const text = await response.text();
       const data = JSON.parse(text);
-      if (data.error) { alert(data.error); return; }
+      if (data.error) {
+        alert(data.error);
+        return;
+      }
       setResult(data);
       await fetchHistories();
       setStep("setup");
@@ -77,7 +136,9 @@ export default function WebExamCard({ setResult, fetchHistories }) {
       <div className="flex items-center justify-between mb-3">
         <span className="font-bold text-slate-300">問題 {qNum}</span>
         {answers[qNum] && (
-          <span className="text-green-400 font-bold text-sm">✓ {answers[qNum]}</span>
+          <span className="text-green-400 font-bold text-sm">
+            ✓ {answers[qNum]}
+          </span>
         )}
       </div>
       <div className="flex gap-2">
@@ -107,8 +168,11 @@ export default function WebExamCard({ setResult, fetchHistories }) {
         <h2 className="text-3xl font-extrabold mb-8 text-center">🌐 Web解答</h2>
 
         <div className="grid md:grid-cols-2 gap-6 mb-6">
+          {/* 受験者名 */}
           <div>
-            <label className="text-slate-300 text-sm font-bold mb-2 block">受験者名</label>
+            <label className="text-slate-300 text-sm font-bold mb-2 block">
+              受験者名
+            </label>
             <input
               type="text"
               value={userName}
@@ -117,49 +181,116 @@ export default function WebExamCard({ setResult, fetchHistories }) {
               className="w-full bg-slate-800 border border-white/20 px-4 py-3 rounded-xl text-white"
             />
           </div>
+
+          {/* 正解マスタモード切り替え */}
           <div>
-            <label className="text-slate-300 text-sm font-bold mb-2 block">試験名</label>
-            <input
-              type="text"
-              value={examTitle}
-              onChange={(e) => setExamTitle(e.target.value)}
-              placeholder="例：python模擬試験"
-              className="w-full bg-slate-800 border border-white/20 px-4 py-3 rounded-xl text-white"
-            />
-          </div>
-          <div>
-            <label className="text-slate-300 text-sm font-bold mb-2 block">問題数</label>
-            <input
-              type="number"
-              value={questionCount}
-              onChange={(e) => setQuestionCount(Number(e.target.value))}
-              min="1"
-              max="200"
-              className="w-full bg-slate-800 border border-white/20 px-4 py-3 rounded-xl text-white"
-            />
-          </div>
-          <div>
-            <label className="text-slate-300 text-sm font-bold mb-2 block">選択肢タイプ</label>
+            <label className="text-slate-300 text-sm font-bold mb-2 block">
+              正解マスタ
+            </label>
             <div className="flex gap-3">
               <button
-                onClick={() => setChoiceType("numeric")}
+                onClick={() => setMasterMode("upload")}
                 className={`flex-1 py-3 rounded-xl font-bold transition ${
-                  choiceType === "numeric" ? "bg-red-500 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  masterMode === "upload"
+                    ? "bg-red-500 text-white"
+                    : "bg-slate-800 text-slate-300 hover:bg-slate-700"
                 }`}
               >
-                1〜5
+                📁 毎回アップロード
               </button>
               <button
-                onClick={() => setChoiceType("alpha")}
+                onClick={() => setMasterMode("db")}
                 className={`flex-1 py-3 rounded-xl font-bold transition ${
-                  choiceType === "alpha" ? "bg-red-500 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  masterMode === "db"
+                    ? "bg-red-500 text-white"
+                    : "bg-slate-800 text-slate-300 hover:bg-slate-700"
                 }`}
               >
-                A〜E
+                🗄️ 登録済みを使う
               </button>
             </div>
           </div>
         </div>
+
+        {/* 登録済みマスタモード */}
+        {masterMode === "db" ? (
+          <div className="mb-6">
+            <label className="text-slate-300 text-sm font-bold mb-2 block">
+              試験を選択
+            </label>
+            <select
+              value={selectedExamId}
+              onChange={(e) => handleExamSelect(e.target.value)}
+              className="w-full bg-slate-800 border border-white/20 px-4 py-3 rounded-xl text-white"
+            >
+              <option value="">-- 試験を選択してください --</option>
+              {exams.map((exam) => (
+                <option key={exam.id} value={exam.id}>
+                  {exam.title}（{exam.question_count}問・
+                  {exam.choice_type === "alpha" ? "A〜E" : "1〜5"}）
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-6 mb-6">
+            {/* 試験名 */}
+            <div>
+              <label className="text-slate-300 text-sm font-bold mb-2 block">
+                試験名
+              </label>
+              <input
+                type="text"
+                value={examTitle}
+                onChange={(e) => setExamTitle(e.target.value)}
+                placeholder="例：python模擬試験"
+                className="w-full bg-slate-800 border border-white/20 px-4 py-3 rounded-xl text-white"
+              />
+            </div>
+            {/* 問題数 */}
+            <div>
+              <label className="text-slate-300 text-sm font-bold mb-2 block">
+                問題数
+              </label>
+              <input
+                type="number"
+                value={questionCount}
+                onChange={(e) => setQuestionCount(Number(e.target.value))}
+                min="1"
+                max="200"
+                className="w-full bg-slate-800 border border-white/20 px-4 py-3 rounded-xl text-white"
+              />
+            </div>
+            {/* 選択肢タイプ */}
+            <div>
+              <label className="text-slate-300 text-sm font-bold mb-2 block">
+                選択肢タイプ
+              </label>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setChoiceType("numeric")}
+                  className={`flex-1 py-3 rounded-xl font-bold transition ${
+                    choiceType === "numeric"
+                      ? "bg-red-500 text-white"
+                      : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  }`}
+                >
+                  1〜5
+                </button>
+                <button
+                  onClick={() => setChoiceType("alpha")}
+                  className={`flex-1 py-3 rounded-xl font-bold transition ${
+                    choiceType === "alpha"
+                      ? "bg-red-500 text-white"
+                      : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  }`}
+                >
+                  A〜E
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <button
           onClick={handleSetup}
@@ -177,14 +308,19 @@ export default function WebExamCard({ setResult, fetchHistories }) {
   if (step === "answering") {
     const half = Math.ceil(questionCount / 2);
     const leftQuestions = Array.from({ length: half }, (_, i) => i + 1);
-    const rightQuestions = Array.from({ length: questionCount - half }, (_, i) => half + i + 1);
+    const rightQuestions = Array.from(
+      { length: questionCount - half },
+      (_, i) => half + i + 1,
+    );
 
     return (
       <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl p-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-extrabold">🌐 {examTitle}</h2>
           <div className="text-slate-300 text-sm">
-            <span className="text-red-400 font-bold text-lg">{answeredCount}</span>
+            <span className="text-red-400 font-bold text-lg">
+              {answeredCount}
+            </span>
             <span> / {questionCount} 問回答済み</span>
           </div>
         </div>
@@ -201,29 +337,52 @@ export default function WebExamCard({ setResult, fetchHistories }) {
           </div>
         </div>
 
-        {/* 正解マスタアップロード */}
-        <div
-          onClick={() => correctInputRef.current.click()}
-          className={`border rounded-2xl p-6 cursor-pointer transition mb-6 ${
-            correctFile
-              ? "border-green-400/50 bg-green-500/10"
-              : "border-white/20 bg-white/5 hover:border-red-400"
-          }`}
-        >
-          <input
-            ref={correctInputRef}
-            type="file"
-            accept=".xlsx"
-            onChange={(e) => setCorrectFile(e.target.files[0])}
-            className="hidden"
-          />
-          <p className="font-bold text-white mb-2">正解マスタExcel</p>
-          <p className={`p-3 rounded-xl text-center font-bold ${
-            correctFile ? "bg-green-500 text-white" : "bg-slate-700 text-slate-300"
-          }`}>
-            {correctFile ? `✔ ${correctFile.name}` : "ファイルを選択してください"}
-          </p>
-        </div>
+        {/* 正解マスタアップロード（uploadモードのみ） */}
+        {masterMode === "upload" && (
+          <div
+            onClick={() => correctInputRef.current.click()}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              const file = e.dataTransfer.files[0];
+              if (file) setCorrectFile(file);
+            }}
+            className={`border rounded-2xl p-6 cursor-pointer transition mb-6 ${
+              correctFile
+                ? "border-green-400/50 bg-green-500/10"
+                : "border-white/20 bg-white/5 hover:border-red-400"
+            }`}
+          >
+            <input
+              ref={correctInputRef}
+              type="file"
+              accept=".xlsx"
+              onChange={(e) => setCorrectFile(e.target.files[0])}
+              className="hidden"
+            />
+            <p className="font-bold text-white mb-2">正解マスタExcel</p>
+            <p
+              className={`p-3 rounded-xl text-center font-bold ${
+                correctFile
+                  ? "bg-green-500 text-white"
+                  : "bg-slate-700 text-slate-300"
+              }`}
+            >
+              {correctFile
+                ? `✔ ${correctFile.name}`
+                : "ファイルをドラッグ＆ドロップ または クリックして選択"}
+            </p>
+          </div>
+        )}
+
+        {/* DB登録済みモードの場合は試験名を表示 */}
+        {masterMode === "db" && (
+          <div className="border border-green-400/50 bg-green-500/10 rounded-2xl p-4 mb-6">
+            <p className="text-green-400 font-bold">
+              🗄️ 登録済みマスタ使用：{examTitle}
+            </p>
+          </div>
+        )}
 
         <div className="flex gap-4">
           <button
@@ -241,7 +400,11 @@ export default function WebExamCard({ setResult, fetchHistories }) {
                 : "bg-slate-700 text-slate-400 cursor-not-allowed"
             }`}
           >
-            {loading ? "採点中..." : allAnswered ? "採点スタート 🐎" : `残り ${questionCount - answeredCount} 問`}
+            {loading
+              ? "採点中..."
+              : allAnswered
+                ? "採点スタート 🐎"
+                : `残り ${questionCount - answeredCount} 問`}
           </button>
         </div>
       </div>
