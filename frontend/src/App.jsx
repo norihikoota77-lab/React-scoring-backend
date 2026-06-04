@@ -103,6 +103,33 @@ export default function App() {
     .filter((h) => selectedUser === "ALL" || h.user_name === selectedUser)
     .filter((h) => selectedExam === "ALL" || h.exam_title === selectedExam);
 
+  const handleDownloadExcel = async (data) => {
+    const response = await fetch(
+      "https://react-scoring-backend.onrender.com/api/download/excel/",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_name: data.user_name,
+          exam_title: data.exam_title,
+          score: data.score,
+          valid_count: data.valid_count,
+          percentage: data.percentage,
+          rank: data.rank,
+          pass_score: passScore,
+          rows_data: data.rows_data,
+        }),
+      }
+    );
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${data.user_name}_${data.exam_title}_採点結果.xlsx`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-slate-900 to-red-950 text-white">
       {loading && <LoadingSpinner />}
@@ -320,27 +347,32 @@ export default function App() {
                 >
                   削除
                 </button>
+ 
                 <div className="flex gap-2 mt-4">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDownloadExcel(history);
-                  }}
-                  className="flex-1 bg-green-500 hover:bg-green-600 px-4 py-2 rounded-xl font-bold transition text-white text-sm"
-                >
-                  📥 Excel
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteHistory(history.id);
-                  }}
-                  className="flex-1 bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl font-bold transition text-white text-sm"
-                >
-                  削除
-                </button>
-              </div>
-              </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownloadExcel({
+                        ...history,
+                        pass_score: passScore,
+                      });
+                    }}
+                    className="flex-1 bg-green-500 hover:bg-green-600 px-4 py-2 rounded-xl font-bold transition text-white text-sm"
+                  >
+                    📥 Excel
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteHistory(history.id);
+                    }}
+                    className="flex-1 bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl font-bold transition text-white text-sm"
+                  >
+                    削除
+                  </button>
+                </div>
+ 
+               </div>
             ))}
           </div>
         </div>
@@ -349,29 +381,3 @@ export default function App() {
   );
 }
 
-const handleDownloadExcel = async (data) => {
-  const response = await fetch(
-    "https://react-scoring-backend.onrender.com/api/download/excel/",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        user_name: data.user_name,
-        exam_title: data.exam_title,
-        score: data.score,
-        valid_count: data.valid_count,
-        percentage: data.percentage,
-        rank: data.rank,
-        pass_score: passScore,
-        rows_data: data.rows_data,
-      }),
-    }
-  );
-  const blob = await response.blob();
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${data.user_name}_${data.exam_title}_採点結果.xlsx`;
-  a.click();
-  window.URL.revokeObjectURL(url);
-};
