@@ -298,6 +298,20 @@ export default function WebExamCard({ setResult, fetchHistories }) {
         >
           解答をはじめる
         </button>
+
+        {/* 管理画面リンク */}
+        {masterMode === "db" && (
+          <div className="mt-4 text-center">
+            <a
+              href="https://react-scoring-backend.onrender.com/admin/"
+              target="_blank"
+              rel="noreferrer"
+              className="text-slate-400 text-sm hover:text-slate-300 transition underline"
+            >
+              ⚙️ 試験・問題を追加・編集する場合はこちら
+            </a>
+          </div>
+        )}
       </div>
     );
   }
