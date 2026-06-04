@@ -788,12 +788,12 @@ def score_web_api(request):
             os.remove(c_temp.name)
 
 
+
 @csrf_exempt
 def create_superuser(request):
     from django.contrib.auth.models import User
-    if not User.objects.filter(username="admin").exists():
-        user = User.objects.create(username="admin", is_superuser=True, is_staff=True)
-        user.set_password("Admin1234!")
-        user.save()
-        return JsonResponse({"message": "作成完了"})
-    return JsonResponse({"message": "すでに存在します"})
+    User.objects.filter(username="admin").delete()
+    user = User.objects.create(username="admin", is_superuser=True, is_staff=True)
+    user.set_password("Admin1234!")
+    user.save()
+    return JsonResponse({"message": "再作成完了"})
