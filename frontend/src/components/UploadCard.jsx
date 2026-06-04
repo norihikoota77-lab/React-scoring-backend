@@ -7,19 +7,16 @@ export default function UploadCard({
   setUserFile,
   handleSubmit,
   loading,
-  passScore,      // ★追加
-  setPassScore,   // ★追加
+  passScore,
+  setPassScore,
+  submitted,
 }) {
-
-const correctInputRef = useRef(null);
-const userInputRef = useRef(null);
+  const correctInputRef = useRef(null);
+  const userInputRef = useRef(null);
 
   return (
     <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl p-10">
-
-      <h2 className="text-3xl font-extrabold mb-8 text-center">
-        Excel採点
-      </h2>
+      <h2 className="text-3xl font-extrabold mb-8 text-center">Excel採点</h2>
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* 正解マスタアップロード */}
@@ -45,14 +42,24 @@ const userInputRef = useRef(null);
             className="hidden"
           />
           <p className="font-bold text-white mb-2">正解マスタExcel</p>
-          <p className={`p-3 rounded-xl text-center font-bold ${
-            correctFile ? "bg-green-500 text-white" : "bg-slate-700 text-slate-300"
-          }`}>
-            {correctFile ? `✔ ${correctFile.name}` : "ファイルをドラッグ＆ドロップ または クリックして選択"}
+
+          {/* 正解マスタ */}
+          <p
+            className={`mt-4 p-4 rounded-xl text-center font-bold transition ${
+              submitted
+                ? "bg-blue-500 text-white"
+                : correctFile
+                  ? "bg-green-500 text-white"
+                  : "bg-slate-700 text-slate-300"
+            }`}
+          >
+            {submitted
+              ? "✔ 採点完了"
+              : correctFile
+                ? `✔ ${correctFile.name}`
+                : "ファイルをドラッグ＆ドロップ または クリックして選択"}
           </p>
         </div>
-
-        
 
         {/* 解答 */}
         <div
@@ -63,7 +70,6 @@ const userInputRef = useRef(null);
             const file = e.dataTransfer.files[0];
             if (file) setUserFile(file);
           }}
-         
           className="
             border
             border-white/20
@@ -79,45 +85,34 @@ const userInputRef = useRef(null);
             hover:border-red-400
             hover:bg-white/10
           "
- >
-          <p className="font-bold text-lg mb-4 text-white">
-            ユーザー解答Excel
-          </p>
+        >
+          <p className="font-bold text-lg mb-4 text-white">ユーザー解答Excel</p>
 
           <input
             ref={userInputRef}
             type="file"
             accept=".xlsx"
-            onChange={(e) =>
-              setUserFile(e.target.files[0])
-            }
-           className="hidden"
+            onChange={(e) => setUserFile(e.target.files[0])}
+            className="hidden"
           />
 
+          {/* ユーザー解答 */}
           <p
-            className={`
-              mt-4
-              p-4
-              rounded-xl
-              text-center
-              font-bold
-              transition
-              ${
-                userFile
+            className={`mt-4 p-4 rounded-xl text-center font-bold transition ${
+              submitted
+                ? "bg-blue-500 text-white"
+                : userFile
                   ? "bg-green-500 text-white"
                   : "bg-slate-700 text-slate-300"
-              }
-            `}
+            }`}
           >
-
-            {userFile
-              ? `✔ ${userFile.name}`
-              : "ファイルを選択してください"}
-
-          </p>          
-
+            {submitted
+              ? "✔ 採点完了"
+              : userFile
+                ? `✔ ${userFile.name}`
+                : "ファイルをドラッグ＆ドロップ または クリックして選択"}
+          </p>
         </div>
-
       </div>
 
       {/* 合格ライン設定 */}
@@ -157,7 +152,6 @@ const userInputRef = useRef(null);
       >
         {loading ? "採点中..." : "採点スタート"}
       </button>
-
     </div>
   );
 }

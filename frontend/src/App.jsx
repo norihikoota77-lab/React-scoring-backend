@@ -8,7 +8,7 @@ import ResultMessage from "./components/ResultMessage";
 import HistoryChart from "./components/HistoryChart";
 import heroImage from "./assets/hero_top.png";
 import AnswerSheet from "./components/AnswerSheet";
-import WebExamCard from "./components/WebExamCard"
+import WebExamCard from "./components/WebExamCard";
 
 export default function App() {
   const [mode, setMode] = useState("excel"); // "excel" or "web"
@@ -21,6 +21,7 @@ export default function App() {
   const [selectedExam, setSelectedExam] = useState("ALL"); // ★追加
   const [selectedHistory, setSelectedHistory] = useState(null);
   const [passScore, setPassScore] = useState(70); // ★合格点の状態を追加
+  const [submitted, setSubmitted] = useState(false);
   const fetchHistories = async () => {
     try {
       const response = await fetch(
@@ -82,9 +83,8 @@ export default function App() {
       }
 
       setResult(data);
+      setSubmitted(true);
       await fetchHistories();
-      setCorrectFile(null);
-      setUserFile(null);
     } catch (error) {
       console.error(error);
       alert("通信エラー");
@@ -154,17 +154,13 @@ export default function App() {
             loading={loading}
             passScore={passScore}
             setPassScore={setPassScore}
-           />
+          />
         )}
 
         {/* Web解答モード */}
         {mode === "web" && (
-          <WebExamCard
-            setResult={setResult}
-            fetchHistories={fetchHistories}
-          />
+          <WebExamCard setResult={setResult} fetchHistories={fetchHistories} />
         )}
-
 
         {result && (
           <>
