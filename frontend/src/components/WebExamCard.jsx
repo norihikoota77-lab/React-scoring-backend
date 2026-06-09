@@ -5,7 +5,7 @@ const API_BASE = "https://react-scoring-backend.onrender.com";
 const NUMERIC_CHOICES = ["1", "2", "3", "4", "5"];
 const ALPHA_CHOICES = ["A", "B", "C", "D", "E"];
 
-export default function WebExamCard({ setResult, fetchHistories }) {
+export default function WebExamCard({ setResult, fetchHistories, users = [], exams: examOptions = [] }) {
   const [step, setStep] = useState("setup");
   const [userName, setUserName] = useState("");
   const [examTitle, setExamTitle] = useState("");
@@ -169,18 +169,22 @@ export default function WebExamCard({ setResult, fetchHistories }) {
 
         <div className="grid md:grid-cols-2 gap-6 mb-6">
           {/* 受験者名 */}
-          <div>
-            <label className="text-slate-300 text-sm font-bold mb-2 block">
-              受験者名
-            </label>
-            <input
-              type="text"
-              value={userName}
-              onChange={(e) => setUserName(e.target.value)}
-              placeholder="例：坂井"
-              className="w-full bg-slate-800 border border-white/20 px-4 py-3 rounded-xl text-white"
-            />
-          </div>
+        <div>
+          <label className="text-slate-300 text-sm font-bold mb-2 block">受験者名</label>
+          <input
+            type="text"
+            list="user-list"
+            value={userName}
+            onChange={(e) => setUserName(e.target.value)}
+            placeholder="例：坂井"
+            className="w-full bg-slate-800 border border-white/20 px-4 py-3 rounded-xl text-white"
+          />
+          <datalist id="exam-list">
+            {examOptions.map((exam) => (
+              <option key={exam} value={exam} />
+            ))}
+          </datalist>
+        </div>
 
           {/* 正解マスタモード切り替え */}
           <div>
@@ -236,17 +240,22 @@ export default function WebExamCard({ setResult, fetchHistories }) {
           <div className="grid md:grid-cols-2 gap-6 mb-6">
             {/* 試験名 */}
             <div>
-              <label className="text-slate-300 text-sm font-bold mb-2 block">
-                試験名
-              </label>
+              <label className="text-slate-300 text-sm font-bold mb-2 block">試験名</label>
               <input
                 type="text"
+                list="exam-list"
                 value={examTitle}
                 onChange={(e) => setExamTitle(e.target.value)}
                 placeholder="例：python模擬試験"
                 className="w-full bg-slate-800 border border-white/20 px-4 py-3 rounded-xl text-white"
               />
+              <datalist id="exam-list">
+                {exams.map((exam) => (
+                  <option key={exam} value={exam} />
+                ))}
+              </datalist>
             </div>
+
             {/* 問題数 */}
             <div>
               <label className="text-slate-300 text-sm font-bold mb-2 block">

@@ -9,9 +9,10 @@ import HistoryChart from "./components/HistoryChart";
 import heroImage from "./assets/hero_top.png";
 import AnswerSheet from "./components/AnswerSheet";
 import WebExamCard from "./components/WebExamCard";
+import Dashboard from "./components/Dashboard";
 
 export default function App() {
-  const [mode, setMode] = useState("excel"); // "excel" or "web"
+  const [mode, setMode] = useState("excel"); // "excel" | "web" | "dashboard"
   const [correctFile, setCorrectFile] = useState(null);
   const [userFile, setUserFile] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -168,7 +169,20 @@ export default function App() {
           >
             🌐 Web解答
           </button>
+
+          <button
+            onClick={() => setMode("dashboard")}
+            className={`px-6 py-3 rounded-2xl font-bold transition ${
+              mode === "dashboard"
+                ? "bg-red-500 text-white"
+                : "bg-white/10 text-slate-300 hover:bg-white/20"
+            }`}
+          >
+            📊 ダッシュボード
+          </button>
+
         </div>
+
 
         {/* Excel採点モード */}
         {mode === "excel" && (
@@ -186,8 +200,27 @@ export default function App() {
 
         {/* Web解答モード */}
         {mode === "web" && (
-          <WebExamCard setResult={setResult} fetchHistories={fetchHistories} />
+          <WebExamCard
+            setResult={setResult}
+            fetchHistories={fetchHistories}
+            users={users.filter((u) => u !== "ALL")}
+            exams={exams.filter((e) => e !== "ALL")}
+          />
         )}
+
+        {/* ダッシュボードモード */}
+        {mode === "dashboard" && (
+          <Dashboard
+            histories={filteredHistories}
+            users={users}
+            exams={exams}
+            selectedUser={selectedUser}
+            selectedExam={selectedExam}
+            setSelectedUser={setSelectedUser}
+            setSelectedExam={setSelectedExam}
+          />
+        )}
+
 
         {result && (
           <>
