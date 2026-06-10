@@ -50,6 +50,8 @@ class Exam(models.Model):
         verbose_name="選択肢タイプ"
     )
 
+    show_questions = models.BooleanField(default=True, verbose_name="問題文を表示する")  # ★追加
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

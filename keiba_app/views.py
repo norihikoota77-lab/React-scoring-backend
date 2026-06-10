@@ -496,6 +496,7 @@ def exam_list_api(request):
             "title": exam.title,
             "choice_type": exam.choice_type,
             "question_count": exam.questions.count(),
+            "show_questions": exam.show_questions,  # ★追加            
         }
         for exam in exams
     ]
@@ -939,7 +940,7 @@ def download_excel_api(request):
                                     )
 
             # 列幅
-            for col, width in {"A": 8, "B": 10, "C": 10, "D": 8, "F": 8, "G": 10, "H": 10, "I": 8}.items():
+            for col, width in {"A": 8, "B": 8, "C": 8, "D": 8, "F": 8, "G": 8, "H": 8, "I": 8}.items():
                 ws.column_dimensions[col].width = width
 
         output.seek(0)
