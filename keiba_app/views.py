@@ -1,3 +1,4 @@
+import json
 import os
 import random
 import pandas as pd
@@ -503,10 +504,9 @@ def exam_list_api(request):
 
     return JsonResponse(data, safe=False)
 
-
 @csrf_exempt
 def exam_questions_api(request, exam_id):
-    """指定試験の問題一覧を返す"""
+    """指定試験の問題一覧を返す（ランダム抽出対応）"""
 
     if request.method != "GET":
         return JsonResponse({"error": "GET only"}, status=400)
@@ -516,16 +516,29 @@ def exam_questions_api(request, exam_id):
     except Exam.DoesNotExist:
         return JsonResponse({"error": "試験が見つかりません"}, status=404)
 
-    questions = exam.questions.all()
+    questions = list(exam.questions.all())
+
+    # ランダム抽出数の指定（クエリパラメータ）
+    sample_size = request.GET.get("sample_size")
+    if sample_size:
+        try:
+            sample_size = int(sample_size)
+            if 0 < sample_size < len(questions):
+                questions = random.sample(questions, sample_size)
+                questions.sort(key=lambda q: q.number)
+        except ValueError:
+            pass
 
     data = {
         "exam_id": exam.id,
         "exam_title": exam.title,
         "choice_type": exam.choice_type,
+        "show_questions": exam.show_questions,
         "questions": [
             {
                 "number": q.number,
                 "text": q.text,
+                "correct_answer": q.correct_answer,  # ★採点用に追加
             }
             for q in questions
         ],
@@ -534,9 +547,10 @@ def exam_questions_api(request, exam_id):
     return JsonResponse(data)
 
 
+
 @csrf_exempt
 def exam_submit_api(request, exam_id):
-    """解答を受け取って採点し結果を返す"""
+    """解答を受け取って採点し結果を返す（出題範囲指定対応）"""
 
     if request.method != "POST":
         return JsonResponse({"error": "POST only"}, status=400)
@@ -547,13 +561,14 @@ def exam_submit_api(request, exam_id):
         return JsonResponse({"error": "試験が見つかりません"}, status=404)
 
     try:
-        import json
         body = json.loads(request.body)
         user_name = body.get("user_name", "名無し")
         answers = body.get("answers", {})
-        # answers = {"1": "3", "2": "A", ...} 問題番号: 解答
+        question_numbers = body.get("question_numbers", None)  # ★出題された問題番号リスト
 
         questions = exam.questions.all()
+        if question_numbers:
+            questions = questions.filter(number__in=question_numbers)
 
         rows_data = []
         score = 0
@@ -594,10 +609,8 @@ def exam_submit_api(request, exam_id):
             "B": "🐎 [入賞] 掲示板に載りました",
             "C": "🏃 [未勝利] ゲート練習からやり直し",
         }
-
         msg = RESULT_MESSAGES[rank]
 
-        # 動画選択
         if percentage >= 80:
             folder_name = "excellent"
         elif percentage >= 50:
@@ -605,13 +618,7 @@ def exam_submit_api(request, exam_id):
         else:
             folder_name = "try_again"
 
-        static_videos_dir = os.path.join(
-            str(settings.BASE_DIR),
-            "keiba_app",
-            "static",
-            "videos"
-        )
-
+        static_videos_dir = os.path.join(str(settings.BASE_DIR), "keiba_app", "static", "videos")
         folder_path = os.path.join(static_videos_dir, folder_name)
         video_file = f"videos/{folder_name}/default.mp4"
 
@@ -620,7 +627,6 @@ def exam_submit_api(request, exam_id):
             if mp4_files:
                 video_file = f"videos/{folder_name}/{random.choice(mp4_files)}"
 
-        # 履歴保存
         ScoreHistory.objects.create(
             score=score,
             valid_count=valid_count,
@@ -646,7 +652,6 @@ def exam_submit_api(request, exam_id):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
-    
 
 # ================================================
 #  Web解答採点 API
