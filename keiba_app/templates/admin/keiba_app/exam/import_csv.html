@@ -1,0 +1,25 @@
+{% extends "admin/base_site.html" %} {% block content %}
+<h1>CSVインポート：{{ exam.title }}</h1>
+
+<p>以下のフォーマットのCSVファイルをアップロードしてください：</p>
+
+<pre>
+number,text,correct_answer
+1,"Q1. 問題文
+A. 選択肢1
+B. 選択肢2",A
+2,"Q2. 問題文...",C</pre
+>
+
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  <p>
+    <label>CSVファイル：</label>
+    <input type="file" name="csv_file" accept=".csv" />
+  </p>
+  <p>
+    <input type="submit" value="インポート" class="default" />
+    <a href="/admin/keiba_app/exam/{{ exam.id }}/change/">キャンセル</a>
+  </p>
+</form>
+{% endblock %}
