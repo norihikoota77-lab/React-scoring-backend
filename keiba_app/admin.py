@@ -17,11 +17,15 @@ class QuestionInline(admin.TabularInline):
 
 @admin.register(Exam)
 class ExamAdmin(admin.ModelAdmin):
-    list_display = ["title", "short_title", "choice_type", "question_count", "created_at"]
+    list_display = ["title", 
+                    # "short_title",
+                    "choice_type", "question_count", "created_at"]
     list_filter = ["choice_type"]
     search_fields = ["title"]
     inlines = [QuestionInline]
-    fields = ["title", "short_title", "memo", "choice_type", "show_questions"]
+    fields = ["title",
+            #   "short_title", 
+              "memo", "choice_type", "show_questions"]
 
     def question_count(self, obj):
         return obj.questions.count()
@@ -97,4 +101,4 @@ class ScoreHistoryAdmin(admin.ModelAdmin):
     list_display = ["user_name", "exam_title", "rank", "percentage", "created_at"]
     list_filter = ["rank", "exam_title"]
     search_fields = ["user_name", "exam_title"]
-    readonly_fields = ["created_at"]
+    readonly_fields = ["created_at"]                

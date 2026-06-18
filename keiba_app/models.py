@@ -31,7 +31,19 @@ class ScoreHistory(models.Model):
         return f"{self.rank} - {self.percentage}%"
 
 
+
 class Exam(models.Model):
+
+    short_title = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name="簡略名"
+    )
+
+    memo = models.TextField(
+        blank=True,
+        verbose_name="詳細メモ"
+    )
 
     CHOICE_TYPE_CHOICES = [
         ("numeric", "1〜5"),
@@ -50,18 +62,22 @@ class Exam(models.Model):
         verbose_name="選択肢タイプ"
     )
 
-    show_questions = models.BooleanField(default=True, verbose_name="問題文を表示する")  # ★追加
+    show_questions = models.BooleanField(
+        default=True,
+        verbose_name="問題文を表示する"
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.title
 
-
-
     class Meta:
         verbose_name = "試験"
         verbose_name_plural = "試験一覧"
+
+
+
 
 
 class Question(models.Model):
