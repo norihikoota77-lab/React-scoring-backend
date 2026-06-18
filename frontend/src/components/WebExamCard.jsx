@@ -27,6 +27,8 @@ export default function WebExamCard({
   const [exams, setExams] = useState([]);
   const [selectedExamId, setSelectedExamId] = useState("");
   const [showQuestions, setShowQuestions] = useState(true);
+  const [sampleSize, setSampleSize] = useState(""); // 出題数（空欄=全問）
+  const [questionNumbers, setQuestionNumbers] = useState([]); // 出題された問題番号
   const correctInputRef = useRef(null);
 
   const choices = choiceType === "numeric" ? NUMERIC_CHOICES : ALPHA_CHOICES;
@@ -40,48 +42,46 @@ export default function WebExamCard({
   }, []);
 
   // 試験選択時に選択肢タイプと試験名を自動設定
+
   const handleExamSelect = (examId) => {
     setSelectedExamId(examId);
     const exam = exams.find((e) => String(e.id) === String(examId));
     if (exam) {
       setExamTitle(exam.title);
       setChoiceType(exam.choice_type === "alpha" ? "alpha" : "numeric");
-      setQuestionCount(exam.question_count);
-
-      if (exam.show_questions) {
-        fetch(`${API_BASE}/api/exams/${examId}/questions/`)
-          .then((res) => res.json())
-          .then((data) => {
-            const texts = {};
-            data.questions.forEach((q) => {
-              texts[q.number] = q.text;
-            });
-            setQuestionTexts(texts);
-          })
-          .catch((err) => console.error(err));
-      } else {
-        setQuestionTexts({}); // 問題文なしの場合はクリア
-      }
     }
   };
 
-  const handleSetup = () => {
-    if (!userName.trim()) {
-      alert("受験者名を入力してください");
-      return;
+
+  const handleSetup = async () => {
+    if (!userName.trim()) { alert("受験者名を入力してください"); return; }
+    if (!examTitle.trim()) { alert("試験名を入力してください"); return; }
+    if (masterMode === "db" && !selectedExamId) { alert("試験を選択してください"); return; }
+
+    if (masterMode === "db") {
+      let url = `${API_BASE}/api/exams/${selectedExamId}/questions/`;
+      if (sampleSize) url += `?sample_size=${sampleSize}`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const numbers = data.questions.map((q) => q.number);
+        const texts = {};
+        data.questions.forEach((q) => { texts[q.number] = q.text; });
+
+        setQuestionNumbers(numbers);
+        setQuestionTexts(texts);
+        setQuestionCount(numbers.length);
+      } catch (err) {
+        alert("問題の取得に失敗しました");
+        return;
+      }
+    } else {
+      if (questionCount < 1 || questionCount > 200) { alert("問題数は1〜200の範囲で入力してください"); return; }
+      setQuestionNumbers(Array.from({ length: questionCount }, (_, i) => i + 1));
+      setQuestionTexts({});
     }
-    if (!examTitle.trim()) {
-      alert("試験名を入力してください");
-      return;
-    }
-    if (masterMode === "db" && !selectedExamId) {
-      alert("試験を選択してください");
-      return;
-    }
-    if (questionCount < 1 || questionCount > 200) {
-      alert("問題数は1〜200の範囲で入力してください");
-      return;
-    }
+
     setAnswers({});
     setStep("answering");
   };
@@ -90,8 +90,9 @@ export default function WebExamCard({
     setAnswers((prev) => ({ ...prev, [qNum]: choice }));
   };
 
+
   const answeredCount = Object.keys(answers).length;
-  const allAnswered = answeredCount === questionCount;
+  const allAnswered = answeredCount === questionNumbers.length;
 
   const handleSubmit = async () => {
     if (masterMode === "upload" && !correctFile) {
@@ -125,6 +126,7 @@ export default function WebExamCard({
             body: JSON.stringify({
               user_name: userName,
               answers: answers,
+              question_numbers: questionNumbers,
             }),
           },
         );
@@ -282,9 +284,9 @@ export default function WebExamCard({
 
         {/* 登録済みマスタモード */}
         {masterMode === "db" && (
-          <div className="grid md:grid-cols-2 gap-6 mb-6">
-            {/* 試験を選択（2列分使う） */}
-            <div className="md:col-span-2">
+          <div className="grid md:grid-cols-3 gap-6 mb-6">
+            {/* 試験を選択（3列分使う） */}
+            <div className="md:col-span-3">
               <label className="text-slate-300 text-sm font-bold mb-2 block">試験を選択</label>
               <select
                 value={selectedExamId}
@@ -299,14 +301,16 @@ export default function WebExamCard({
                 ))}
               </select>
             </div>
+
             {/* 問題文の表示 */}
             <div>
               <label className="text-slate-300 text-sm font-bold mb-2 block">問題文の表示</label>
               <div className="flex gap-3">
-                <button onClick={() => setShowQuestions(true)} className={`flex-1 py-3 rounded-xl font-bold transition ${showQuestions ? "bg-red-500 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"}`}>📖 表示する</button>
-                <button onClick={() => setShowQuestions(false)} className={`flex-1 py-3 rounded-xl font-bold transition ${!showQuestions ? "bg-red-500 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"}`}>🔢 解答のみ</button>
+                <button onClick={() => setShowQuestions(true)} className={`flex-1 py-3 rounded-xl font-bold transition ${showQuestions ? "bg-red-500 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"}`}>📖 表示</button>
+                <button onClick={() => setShowQuestions(false)} className={`flex-1 py-3 rounded-xl font-bold transition ${!showQuestions ? "bg-red-500 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"}`}>🔢 のみ</button>
               </div>
             </div>
+
             {/* 選択肢タイプ */}
             <div>
               <label className="text-slate-300 text-sm font-bold mb-2 block">選択肢タイプ</label>
@@ -315,8 +319,22 @@ export default function WebExamCard({
                 <button onClick={() => setChoiceType("alpha")} className={`flex-1 py-3 rounded-xl font-bold transition ${choiceType === "alpha" ? "bg-red-500 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"}`}>A〜E</button>
               </div>
             </div>
+
+            {/* 出題数 */}
+            <div>
+              <label className="text-slate-300 text-sm font-bold mb-2 block">出題数（空欄で全問）</label>
+              <input
+                type="number"
+                value={sampleSize}
+                onChange={(e) => setSampleSize(e.target.value)}
+                min="1"
+                placeholder="例：10"
+                className="w-full bg-slate-800 border border-white/20 px-4 py-3 rounded-xl text-white"
+              />
+            </div>
           </div>
         )}
+
 
         {/* アップロードモード */}
         {masterMode === "upload" && (
@@ -378,12 +396,9 @@ export default function WebExamCard({
   // STEP 2：解答画面
   // ============================================================
   if (step === "answering") {
-    const half = Math.ceil(questionCount / 2);
-    const leftQuestions = Array.from({ length: half }, (_, i) => i + 1);
-    const rightQuestions = Array.from(
-      { length: questionCount - half },
-      (_, i) => half + i + 1,
-    );
+    const half = Math.ceil(questionNumbers.length / 2);
+    const leftQuestions = questionNumbers.slice(0, half);
+    const rightQuestions = questionNumbers.slice(half);
 
     return (
       <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl p-8">
@@ -393,20 +408,26 @@ export default function WebExamCard({
             <span className="text-red-400 font-bold text-lg">
               {answeredCount}
             </span>
-            <span> / {questionCount} 問回答済み</span>
+            <span> / {questionNumbers.length} 問回答済み</span>
           </div>
         </div>
 
         <p className="text-slate-300 text-sm mb-6">受験者：{userName}</p>
 
-        {/* 問題一覧：左右2列で縦に並べる */}
-        <div className="flex gap-4 mb-8">
+
+        {/* PC：左右2列 / モバイル：縦1列 */}
+        <div className="hidden md:flex gap-4 mb-8">
           <div className="flex-1 flex flex-col gap-4">
             {leftQuestions.map((qNum) => renderQuestionCard(qNum))}
           </div>
           <div className="flex-1 flex flex-col gap-4">
             {rightQuestions.map((qNum) => renderQuestionCard(qNum))}
           </div>
+        </div>
+
+        {/* モバイル：縦1列 */}
+        <div className="flex flex-col gap-4 mb-8 md:hidden">
+          {questionNumbers.map((qNum) => renderQuestionCard(qNum))}
         </div>
 
         {/* 正解マスタアップロード（uploadモードのみ） */}
@@ -476,7 +497,7 @@ export default function WebExamCard({
               ? "採点中..."
               : allAnswered
                 ? "採点スタート 🐎"
-                : `残り ${questionCount - answeredCount} 問`}
+                : `残り ${questionNumbers.length - answeredCount} 問`}
           </button>
         </div>
       </div>

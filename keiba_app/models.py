@@ -57,6 +57,8 @@ class Exam(models.Model):
     def __str__(self):
         return self.title
 
+
+
     class Meta:
         verbose_name = "試験"
         verbose_name_plural = "試験一覧"
