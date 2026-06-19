@@ -11,7 +11,7 @@ from .models import ScoreHistory, Exam, Question, Category
 class QuestionInline(admin.TabularInline):
     model = Question
     extra = 5
-    fields = ["number", "text", "correct_answer", "category"]
+    fields = ["number", "category", "text", "correct_answer"]
     ordering = ["number"]
 
 

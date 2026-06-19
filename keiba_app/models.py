@@ -94,9 +94,6 @@ class Exam(models.Model):
         verbose_name_plural = "試験一覧"
 
 
-
-
-
 class Question(models.Model):
 
     exam = models.ForeignKey(
@@ -104,6 +101,15 @@ class Question(models.Model):
         on_delete=models.CASCADE,
         related_name="questions",
         verbose_name="試験"
+    )
+
+    category = models.ForeignKey(
+        "Category",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="questions",
+        verbose_name="カテゴリ"
     )
 
     number = models.PositiveIntegerField(
