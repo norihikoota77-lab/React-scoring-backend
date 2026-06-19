@@ -5,13 +5,13 @@ from django.template.response import TemplateResponse
 from django.contrib import messages
 import csv
 import io
-from .models import ScoreHistory, Exam, Question
+from .models import ScoreHistory, Exam, Question, Category
 
 
 class QuestionInline(admin.TabularInline):
     model = Question
     extra = 5
-    fields = ["number", "text", "correct_answer"]
+    fields = ["number", "text", "correct_answer", "category"]
     ordering = ["number"]
 
 
@@ -94,6 +94,13 @@ class ExamAdmin(admin.ModelAdmin):
         extra_context = extra_context or {}
         extra_context["import_csv_url"] = f"/admin/keiba_app/exam/{object_id}/import-csv/"
         return super().change_view(request, object_id, form_url, extra_context)
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+
+    list_display = ["name", "created_at"]
+
+    search_fields = ["name"]
 
 
 @admin.register(ScoreHistory)

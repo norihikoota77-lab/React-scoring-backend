@@ -30,7 +30,24 @@ class ScoreHistory(models.Model):
     def __str__(self):
         return f"{self.rank} - {self.percentage}%"
 
+class Category(models.Model):
 
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name="カテゴリ名"
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+        verbose_name = "カテゴリ"
+        verbose_name_plural = "カテゴリ"
+
+    def __str__(self):
+        return self.name
 
 class Exam(models.Model):
 
